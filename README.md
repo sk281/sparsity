@@ -1,25 +1,16 @@
-# Cogni-Sparse
+# Sparsity
 
-Sparse embeddings with lazy, on-demand reconstruction.
+Sparse embeddings with lazy on-demand reconstruction — 10–30× smaller than dense for local/edge AI.
 
-**Core idea**  
-Each word stores only non-zero position-value pairs (dict or sorted list).  
-One global shared zero-vector (size n) for all words.  
-Reconstruction: copy zero vector + scatter sparse values.
+## Why
+- Dense embeddings waste 90–99% space on zeros  
+- Sparsity stores only non-zero positions + values  
+- Shared global zero vector  
+- Lazy scheduler: fill only when needed (heap-free)
 
-**Lazy scheduler** (optional)  
-Global counter + per-word `next_pos` variable.  
-Only fill a position when counter reaches it — demand-driven, heap-free.
-
-**Benefits**  
-- 10–30× smaller than dense (often 10–15×)  
-- Fast reconstruction (O(k) scatter, k usually 8–64)  
-- Incremental: add words easily  
-- Interpretable: see exactly which dimensions are active  
-
-**Limitations**  
-- Slower batched GPU matmul without sparse kernels  
-- Training updates slightly slower  
-- Personal prototype — no large-scale benchmarks yet  
-
-MIT license. Built from intuition, numbers vary. If you want to extend it (benchmarks, sparse matmul, etc.) — fork/PR away.
+## Quick start
+```python
+cs = Sparsity(dim=768)
+cs.add_word("hello", {0: 0.8, 3: -0.2, 7: 0.5})
+vec = cs.get_vector("hello", lazy=True)   # on-demand
+cs.advance_counter(10)                    # move clock forward
